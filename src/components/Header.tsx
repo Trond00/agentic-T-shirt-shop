@@ -21,14 +21,14 @@ export default function Header() {
             Home
           </Link>
           <Link
-            href="/notes"
+            href="/catalog"
             className={`text-lg font-medium ${
-              pathname === '/notes'
+              pathname === '/catalog'
                 ? 'text-black dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white'
             } transition-colors`}
           >
-            Notes
+            Catalog
           </Link>
         </nav>
       </div>
