@@ -30,6 +30,16 @@ export default function Header() {
           >
             Catalog
           </Link>
+          <Link
+            href="/categories"
+            className={`text-lg font-medium ${
+              pathname === '/categories'
+                ? 'text-black dark:text-white'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white'
+            } transition-colors`}
+          >
+            Categories
+          </Link>
         </nav>
       </div>
     </header>
