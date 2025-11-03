@@ -1,7 +1,226 @@
-export default function Product({ params }: { params: { slug: string } }) {
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { getProductBySlug, getRelatedProducts } from '@/lib/supabase/products';
+import { ProductWithReviews, Product as ProductType } from '@/lib/types';
+import { ReviewCard } from '@/components/ReviewCard';
+import { RelatedProducts } from '@/components/RelatedProducts';
+
+export default function Product() {
+  const params = useParams();
+  const slug = params.slug as string;
+
+  const [product, setProduct] = useState<ProductWithReviews | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!slug) return;
+
+      setLoading(true);
+      const productData = await getProductBySlug(slug);
+      setProduct(productData);
+
+      if (productData) {
+        const related = await getRelatedProducts(productData.id, productData.category_id);
+        setRelatedProducts(related);
+      }
+
+      setLoading(false);
+    };
+
+    loadProduct();
+  }, [slug]);
+
+  const formatPrice = (amount: number, currency: string) => {
+    const price = amount / 100; // Convert from øre/cents to currency units
+    return new Intl.NumberFormat('no-NO', {
+      style: 'currency',
+      currency: currency,
+    }).format(price);
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <svg
+        key={i}
+        className={`w-5 h-5 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+        viewBox="0 0 24 24"
+      >
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-16">
+            <div className="text-gray-500">Loading product...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center py-16">
+            <h1 className="text-2xl font-light text-black mb-4">Product not found</h1>
+            <Link
+              href="/catalog"
+              className="inline-block px-6 py-3 bg-black text-white hover:bg-gray-800 transition-colors"
+            >
+              Back to catalog
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="max-w-3xl mx-auto py-4 px-4">
-      <h1 className="text-3xl font-bold">Product: {params.slug}</h1>
-    </main>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <nav className="text-sm text-gray-600 mb-4">
+            <Link href="/" className="hover:text-black">Home</Link>
+            <span className="mx-2">/</span>
+            <Link href="/catalog" className="hover:text-black">Catalog</Link>
+            <span className="mx-2">/</span>
+            <span className="text-black">{product.name}</span>
+          </nav>
+          <h1 className="text-3xl font-light text-black">{product.name}</h1>
+        </div>
+      </div>
+
+      {/* Product Details */}
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Product Image */}
+          <div className="aspect-square relative overflow-hidden bg-gray-50 rounded-lg">
+            {product.image_url ? (
+              <Image
+                src={product.image_url}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-light text-black mb-2">{product.name}</h2>
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-3xl font-semibold text-black">
+                  {formatPrice(product.unit_amount, product.currency)}
+                </span>
+                {product.averageRating > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="flex">{renderStars(Math.round(product.averageRating))}</div>
+                    <span className="text-sm text-gray-600">
+                      ({product.reviewCount} review{product.reviewCount !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Availability */}
+              <div className="mb-6">
+                <span className={`text-sm font-medium ${product.inventory_count > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {product.inventory_count > 0 ? 'In stock' : 'Out of stock'}
+                </span>
+                {product.inventory_count > 0 && (
+                  <span className="text-sm text-gray-600 ml-2">
+                    ({product.inventory_count} available)
+                  </span>
+                )}
+              </div>
+
+              {/* Description */}
+              {product.description && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-black mb-3">Description</h3>
+                  <p className="text-gray-700 leading-relaxed">{product.description}</p>
+                </div>
+              )}
+
+              {/* Category */}
+              {product.category && (
+                <div className="mb-6">
+                  <span className="text-sm text-gray-600">Category: </span>
+                  <Link
+                    href={`/categories/${product.category.slug}`}
+                    className="text-sm text-black hover:underline"
+                  >
+                    {product.category.name}
+                  </Link>
+                  <span className="text-sm text-gray-600 ml-4">•</span>
+                  <Link
+                    href={`/categories/${product.category.slug}`}
+                    className="text-sm text-gray-600 hover:text-black transition-colors ml-4"
+                  >
+                    View other {product.category.name} →
+                  </Link>
+                </div>
+              )}
+
+              {/* Buy Button */}
+              <button
+                className={`w-full py-4 px-6 text-center font-medium transition-colors ${
+                  product.inventory_count > 0
+                    ? 'bg-black text-white hover:bg-gray-800'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                disabled={product.inventory_count === 0}
+              >
+                {product.inventory_count > 0 ? 'Buy' : 'Out of stock'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        {product.reviews.length > 0 && (
+          <div className="mt-16 border-t border-gray-200 pt-16">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-light text-black">Reviews</h2>
+              <div className="flex items-center gap-2">
+                <div className="flex">{renderStars(Math.round(product.averageRating))}</div>
+                <span className="text-sm text-gray-600">
+                  {product.averageRating.toFixed(1)} ({product.reviewCount} review{product.reviewCount !== 1 ? 's' : ''})
+                </span>
+              </div>
+            </div>
+            <div className="space-y-6">
+              {product.reviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related Products */}
+        <RelatedProducts products={relatedProducts} />
+      </div>
+    </div>
   );
 }

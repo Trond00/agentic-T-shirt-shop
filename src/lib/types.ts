@@ -20,6 +20,21 @@ export interface Product {
   category?: Category; // joined data
 }
 
+export interface Review {
+  id: string;
+  product_id: string;
+  rating: number; // 1-5
+  comment?: string;
+  customer_email?: string;
+  created_at: string;
+}
+
+export interface ProductWithReviews extends Product {
+  reviews: Review[];
+  averageRating: number;
+  reviewCount: number;
+}
+
 export interface CatalogFilters {
   search: string;
   category: string;

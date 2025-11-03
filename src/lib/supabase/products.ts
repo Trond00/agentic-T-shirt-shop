@@ -1,5 +1,5 @@
 import { createClient } from './client';
-import { Product, Category, CatalogFilters } from '@/lib/types';
+import { Product, Category, CatalogFilters, ProductWithReviews, Review } from '@/lib/types';
 
 // Client-side functions for use in client components
 export async function getCategories(): Promise<Category[]> {
@@ -12,6 +12,51 @@ export async function getCategories(): Promise<Category[]> {
 
   if (error) {
     console.error('Error fetching categories:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getCategoriesWithCounts(): Promise<(Category & { productCount: number })[]> {
+  const supabase = createClient();
+
+  // Get categories with product counts
+  const { data, error } = await supabase
+    .from('categories')
+    .select(`
+      *,
+      products:products(count)
+    `)
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching categories with counts:', error);
+    return [];
+  }
+
+  return (data || []).map(category => ({
+    ...category,
+    productCount: category.products?.[0]?.count || 0
+  }));
+}
+
+export async function getFeaturedProductsByCategory(categoryId: string, limit: number = 3): Promise<Product[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(*)
+    `)
+    .eq('published', true)
+    .eq('category_id', categoryId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching featured products by category:', error);
     return [];
   }
 
@@ -78,4 +123,70 @@ export async function getProducts(filters: CatalogFilters): Promise<{
     products: data || [],
     totalCount: count || 0
   };
+}
+
+export async function getProductBySlug(slug: string): Promise<ProductWithReviews | null> {
+  const supabase = createClient();
+
+  // Get product with category
+  const { data: product, error: productError } = await supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(*)
+    `)
+    .eq('slug', slug)
+    .eq('published', true)
+    .single();
+
+  if (productError || !product) {
+    console.error('Error fetching product:', productError);
+    return null;
+  }
+
+  // Get reviews
+  const { data: reviews, error: reviewsError } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('product_id', product.id)
+    .order('created_at', { ascending: false });
+
+  if (reviewsError) {
+    console.error('Error fetching reviews:', reviewsError);
+  }
+
+  const reviewsData = reviews || [];
+  const averageRating = reviewsData.length > 0
+    ? reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length
+    : 0;
+
+  return {
+    ...product,
+    reviews: reviewsData,
+    averageRating,
+    reviewCount: reviewsData.length
+  };
+}
+
+export async function getRelatedProducts(productId: string, categoryId: string, limit: number = 4): Promise<Product[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      category:categories(*)
+    `)
+    .eq('published', true)
+    .eq('category_id', categoryId)
+    .neq('id', productId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching related products:', error);
+    return [];
+  }
+
+  return data || [];
 }
