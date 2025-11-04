@@ -18,6 +18,7 @@ export interface Product {
   created_at: string;
   updated_at: string;
   category?: Category; // joined data
+  stripe_price_id?: string;
 }
 
 export interface Review {

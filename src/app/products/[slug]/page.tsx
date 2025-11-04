@@ -184,16 +184,21 @@ export default function Product() {
               )}
 
               {/* Buy Button */}
-              <button
-                className={`w-full py-4 px-6 text-center font-medium transition-colors ${
-                  product.inventory_count > 0
-                    ? 'bg-black text-white hover:bg-gray-800'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                disabled={product.inventory_count === 0}
-              >
-                {product.inventory_count > 0 ? 'Buy' : 'Out of stock'}
-              </button>
+              {product.inventory_count > 0 ? (
+                <Link
+                  href={`/checkout?product=${product.slug}`}
+                  className="block w-full bg-black text-white py-4 px-6 text-center font-medium hover:bg-gray-800 transition-colors"
+                >
+                  Buy
+                </Link>
+              ) : (
+                <button
+                  className="w-full py-4 px-6 text-center font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
+                  disabled
+                >
+                  Out of stock
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -43,9 +43,21 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
       <div className="px-4 pb-4">
-        <button className="w-full bg-black text-white py-2 px-4 hover:bg-gray-800 transition-colors duration-200 text-sm font-medium">
-          Buy
-        </button>
+        {product.inventory_count > 0 ? (
+          <Link
+            href={`/checkout?product=${product.slug}`}
+            className="block w-full bg-black text-white py-2 px-4 hover:bg-gray-800 transition-colors duration-200 text-sm font-medium text-center"
+          >
+            Buy
+          </Link>
+        ) : (
+          <button
+            className="w-full py-2 px-4 text-center font-medium bg-gray-300 text-gray-500 cursor-not-allowed text-sm"
+            disabled
+          >
+            Out of stock
+          </button>
+        )}
       </div>
     </div>
   );
