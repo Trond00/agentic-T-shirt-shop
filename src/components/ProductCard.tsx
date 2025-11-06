@@ -22,7 +22,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.image_url ? (
             <Image
               src={product.image_url}
-              alt={product.name}
+              alt={`${product.name} - High quality ${product.category?.name || 'product'} from Agentic Shop`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-200"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

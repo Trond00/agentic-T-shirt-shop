@@ -6,6 +6,7 @@ import { ProductWithReviews, Product as ProductType } from '@/lib/types';
 import { ReviewCard } from '@/components/ReviewCard';
 import { RelatedProducts } from '@/components/RelatedProducts';
 import { ProductJsonLd } from '@/components/ProductJsonLd';
+import { ProductOpenGraph } from '@/components/ProductOpenGraph';
 
 interface ProductPageProps {
   params: {
@@ -47,6 +48,7 @@ export default async function Product({ params }: ProductPageProps) {
   return (
     <>
       <ProductJsonLd product={product} />
+      <ProductOpenGraph product={product} />
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
@@ -70,7 +72,7 @@ export default async function Product({ params }: ProductPageProps) {
             {product.image_url ? (
               <Image
                 src={product.image_url}
-                alt={product.name}
+                alt={`${product.name} - ${product.category?.name || 'Product'} from Agentic Shop. ${product.description ? product.description.substring(0, 100) + '...' : 'High quality product'}`}
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
