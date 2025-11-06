@@ -1,40 +1,27 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getProductBySlug, getRelatedProducts } from '@/lib/supabase/products';
+import { getProductBySlugServer, getRelatedProductsServer, getAllProductSlugs } from '@/lib/supabase/products-server';
 import { ProductWithReviews, Product as ProductType } from '@/lib/types';
 import { ReviewCard } from '@/components/ReviewCard';
 import { RelatedProducts } from '@/components/RelatedProducts';
 
-export default function Product() {
-  const params = useParams();
-  const slug = params.slug as string;
+interface ProductPageProps {
+  params: {
+    slug: string;
+  };
+}
 
-  const [product, setProduct] = useState<ProductWithReviews | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function Product({ params }: ProductPageProps) {
+  const { slug } = await params;
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      if (!slug) return;
+  const product = await getProductBySlugServer(slug);
 
-      setLoading(true);
-      const productData = await getProductBySlug(slug);
-      setProduct(productData);
+  if (!product) {
+    notFound();
+  }
 
-      if (productData) {
-        const related = await getRelatedProducts(productData.id, productData.category_id);
-        setRelatedProducts(related);
-      }
-
-      setLoading(false);
-    };
-
-    loadProduct();
-  }, [slug]);
+  const relatedProducts = await getRelatedProductsServer(product.id, product.category_id);
 
   const formatPrice = (amount: number, currency: string) => {
     const price = amount / 100; // Convert from øre/cents to currency units
@@ -55,36 +42,6 @@ export default function Product() {
       </svg>
     ));
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-16">
-            <div className="text-gray-500">Loading product...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center py-16">
-            <h1 className="text-2xl font-light text-black mb-4">Product not found</h1>
-            <Link
-              href="/catalog"
-              className="inline-block px-6 py-3 bg-black text-white hover:bg-gray-800 transition-colors"
-            >
-              Back to catalog
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,4 +185,12 @@ export default function Product() {
       </div>
     </div>
   );
+}
+
+export async function generateStaticParams() {
+  const productSlugs = await getAllProductSlugs();
+
+  return productSlugs.map(({ slug }) => ({
+    slug,
+  }));
 }
