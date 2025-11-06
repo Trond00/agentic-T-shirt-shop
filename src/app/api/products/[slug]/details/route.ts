@@ -3,10 +3,10 @@ import { getProductBySlugServer, getRelatedProductsServer } from '@/lib/supabase
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
 
     // Get detailed product information
     const product = await getProductBySlugServer(slug);
