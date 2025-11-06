@@ -5,6 +5,7 @@ import { getProductBySlugServer, getRelatedProductsServer, getAllProductSlugs } 
 import { ProductWithReviews, Product as ProductType } from '@/lib/types';
 import { ReviewCard } from '@/components/ReviewCard';
 import { RelatedProducts } from '@/components/RelatedProducts';
+import { ProductJsonLd } from '@/components/ProductJsonLd';
 
 interface ProductPageProps {
   params: {
@@ -44,9 +45,11 @@ export default async function Product({ params }: ProductPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+    <>
+      <ProductJsonLd product={product} />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <nav className="text-sm text-gray-600 mb-4">
             <Link href="/" className="hover:text-black">Home</Link>
@@ -184,6 +187,7 @@ export default async function Product({ params }: ProductPageProps) {
         <RelatedProducts products={relatedProducts} />
       </div>
     </div>
+    </>
   );
 }
 
