@@ -30,7 +30,8 @@ export async function GET(
       price: (product.unit_amount / 100).toFixed(2),
       currency: product.currency,
       category: product.category?.name || 'General',
-      image_url: `${request.nextUrl.origin}/api/products/${product.slug}/image`,
+      image_url: product.image_url, // Direct Supabase URL for ChatGPT access
+      image_proxy_url: `${request.nextUrl.origin}/api/products/${product.slug}/image`, // Proxy URL with AI metadata headers
       image_alt: `${product.name} - ${product.category?.name || 'Product'} from Agentic Shop`,
       product_url: `${request.nextUrl.origin}/products/${product.slug}`,
       in_stock: product.inventory_count > 0,
@@ -49,7 +50,8 @@ export async function GET(
         slug: related.slug,
         price: (related.unit_amount / 100).toFixed(2),
         currency: related.currency,
-        image_url: `${request.nextUrl.origin}/api/products/${related.slug}/image`,
+        image_url: related.image_url, // Direct Supabase URL for related products
+        image_proxy_url: `${request.nextUrl.origin}/api/products/${related.slug}/image`, // Proxy URL for related products
         product_url: `${request.nextUrl.origin}/products/${related.slug}`,
       })),
     };
