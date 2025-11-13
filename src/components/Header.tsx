@@ -40,6 +40,16 @@ export default function Header() {
           >
             Categories
           </Link>
+          <Link
+            href="/openai-feed"
+            className={`text-lg font-medium ${
+              pathname === '/openai-feed'
+                ? 'text-black dark:text-white'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white'
+            } transition-colors`}
+          >
+            OpenAI Feed
+          </Link>
         </nav>
       </div>
     </header>
