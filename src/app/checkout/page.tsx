@@ -141,7 +141,7 @@ export default function CheckoutPage() {
           <div>
             <h2 className="text-xl font-medium text-black mb-6">Payment</h2>
             <div className="bg-white rounded-lg p-6">
-              <Checkout priceId={product.stripe_price_id!} quantity={1} />
+            <Checkout priceId={product.stripe_price_id!} productId={product.id} quantity={1} />
             </div>
           </div>
         </div>

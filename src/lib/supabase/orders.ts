@@ -10,6 +10,7 @@ export async function createOrder(orderData: {
   currency: string;
   shipping_address?: Order['shipping_address'];
 }): Promise<Order> {
+    
   const supabase = await createClient();
 
   const { data, error } = await supabase

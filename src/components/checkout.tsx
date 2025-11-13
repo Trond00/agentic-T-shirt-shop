@@ -13,13 +13,14 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!)
 
 interface CheckoutProps {
   priceId: string
+  productId: string
   quantity?: number
 }
 
-export default function Checkout({ priceId, quantity = 1 }: CheckoutProps) {
+export default function Checkout({ priceId, productId, quantity = 1 }: CheckoutProps) {
   const fetchClientSecretCallback = useCallback(() =>
-    fetchClientSecret({ priceId, quantity }),
-    [priceId, quantity]
+    fetchClientSecret({ priceId, productId, quantity }),
+    [priceId, productId, quantity]
   )
 
   const options = {

@@ -6,6 +6,7 @@ import { stripe } from '../../lib/stripe'
 
 interface ProductData {
   priceId: string
+  productId: string
   quantity?: number
 }
 
@@ -23,6 +24,10 @@ export async function fetchClientSecret(productData: ProductData) {
     ],
     mode: 'payment',
     return_url: `${origin}/return?session_id={CHECKOUT_SESSION_ID}`,
+    metadata: {
+      product_id: productData.productId,
+      quantity: (productData.quantity || 1).toString()
+    }
   })
 
   return session.client_secret!
