@@ -75,3 +75,39 @@ export interface Order {
   updated_at: string;
   items?: OrderItem[]; // joined data
 }
+
+export interface CheckoutSessionItem {
+  sku: string; // product ID
+  name: string;
+  unit_price: number; // in øre for NOK
+  quantity: number;
+  vat_rate: number; // 0.25 for Norway
+}
+
+export interface ShippingOption {
+  id: string;
+  label: string;
+  amount: number; // in øre
+}
+
+export interface CheckoutSession {
+  id: string;
+  status: 'created' | 'updated' | 'ready_for_payment' | 'completed';
+  items: CheckoutSessionItem[];
+  shipping_address?: {
+    postal_code: string;
+    country: string;
+  };
+  shipping_options: ShippingOption[];
+  selected_shipping?: string;
+  currency: 'NOK';
+  vat_rate: 0.25;
+  subtotal: number;
+  shipping_amount: number;
+  vat_amount: number;
+  grand_total: number;
+  messages: string[];
+  idempotency_key: string;
+  created_at: string;
+  updated_at: string;
+}
