@@ -18,7 +18,6 @@ export async function handleMcpRequest(
           protocolVersion: params?.protocolVersion || "2024-11-05",
           capabilities: {
             tools: {},
-            resources: {},
           },
           serverInfo: {
             name: "agentic-tshirt-shop",
