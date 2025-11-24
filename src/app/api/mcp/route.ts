@@ -120,7 +120,9 @@ export async function GET() {
     JSON.stringify({
       ...serverInfo,
       capabilities: {
-        tools: {}
+        tools: {
+          listChanged: false
+        }
       }
     }),
     {
