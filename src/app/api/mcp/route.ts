@@ -1,127 +1,163 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { McpServer } from "@/lib/mcp-server";
+import { NextRequest, NextResponse } from "next/server";
+import { handleMcpRequest } from "@/lib/mcp-handler";
+import { config } from "@/lib/config";
 import { getProducts } from '@/lib/supabase/products';
 import { getProductBySlug } from '@/lib/supabase/products';
 import { CatalogFilters } from '@/lib/types';
 
-// MCP Server Info
-const serverInfo = {
+const server = new McpServer({
   name: "agentic-tshirt-shop",
-  version: "1.0.0"
-};
+  version: "1.0.0",
+});
 
-// Define available tools with proper JSON Schema
-const tools = {
-  "getProducts": {
-    name: "getProducts",
-    description: "Get T-shirt products from the Agentic Shop catalog",
-    inputSchema: {
-      type: "object",
-      properties: {
-        limit: {
-          type: "number",
-          description: "Maximum number of products to return (default: 10)"
-        }
-      }
-    }
+const resourceOrigin = (() => {
+  try {
+    return new URL(config.baseURL).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+})();
+
+server.registerTool(
+  "getProducts",
+  {
+    description: "Get all T-shirt products from the Agentic Shop catalog",
   },
-  "showProduct": {
-    name: "showProduct",
-    description: "Show details of a specific T-shirt product",
+  async () => {
+    try {
+      const filters: CatalogFilters = {
+        search: '',
+        category: '',
+        sort: 'newest',
+        page: 1,
+        limit: 20,
+      };
+
+      const { products } = await getProducts(filters);
+
+      const transformedProducts = products.map(product => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description || `${product.name} - High quality product`,
+        price: (product.unit_amount / 100).toFixed(2),
+        currency: product.currency,
+        category: product.category?.name || 'General',
+        in_stock: product.inventory_count > 0
+      }));
+
+      return {
+        content: [{ type: "text", text: JSON.stringify(transformedProducts) }],
+      };
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return {
+        content: [{ type: "text", text: "Error fetching products" }],
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "showProduct",
+  {
+    description: "Show a T-shirt product from the Agentic Shop",
     inputSchema: {
       type: "object",
       properties: {
-        slug: {
-          type: "string",
-          description: "The slug of the product to show"
-        }
+        slug: { type: "string", description: "The slug of the product to show" }
       },
       required: ["slug"]
+    },
+    _meta: {
+      "openai/outputTemplate": "ui://widget/show-product.html",
+      "openai/toolInvocation/invoking": "Showing a product...",
+      "openai/toolInvocation/invoked": "Showed a product!",
+    },
+  },
+  async ({ slug }) => {
+    try {
+      const product = await getProductBySlug(slug);
+
+      if (!product) {
+        return {
+          content: [{ type: "text", text: "Product not found" }],
+        };
+      }
+
+      const transformedProduct = {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description || `${product.name} - High quality product`,
+        price: (product.unit_amount / 100).toFixed(2),
+        currency: product.currency,
+        category: product.category?.name || 'General',
+        in_stock: product.inventory_count > 0,
+        review_count: product.reviewCount,
+      };
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(transformedProduct),
+          },
+        ],
+        structuredContent: transformedProduct,
+      };
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      return {
+        content: [{ type: "text", text: "Error fetching product" }],
+      };
     }
   }
-};
+);
 
-// Tool implementations
-async function callTool(toolName: string, args: any) {
-  switch (toolName) {
-    case "getProducts":
-      return await getAllProducts(args);
-    case "showProduct":
-      return await showProduct(args.slug);
-    default:
-      throw new Error(`Unknown tool: ${toolName}`);
-  }
-}
-
-async function getAllProducts(args: { limit?: number } = {}) {
-  try {
-    const filters: CatalogFilters = {
-      search: '',
-      category: '',
-      sort: 'newest',
-      page: 1,
-      limit: Math.min(args.limit || 10, 50),
-    };
-
-    const { products } = await getProducts(filters);
-
-    const transformedProducts = products.map(product => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      description: product.description || `${product.name} - High quality product`,
-      price: (product.unit_amount / 100).toFixed(2),
-      currency: product.currency,
-      category: product.category?.name || 'General',
-      in_stock: product.inventory_count > 0
-    }));
-
-    return [{
-      type: "text",
-      text: JSON.stringify(transformedProducts, null, 2)
-    }];
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [{ type: "text", text: "Error fetching products" }];
-  }
-}
-
-async function showProduct(slug: string) {
-  try {
-    const product = await getProductBySlug(slug);
-
-    if (!product) {
-      return [{ type: "text", text: "Product not found" }];
-    }
-
-    const transformedProduct = {
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      description: product.description || `${product.name} - High quality product`,
-      price: (product.unit_amount / 100).toFixed(2),
-      currency: product.currency,
-      category: product.category?.name || 'General',
-      in_stock: product.inventory_count > 0,
-      review_count: product.reviewCount,
-    };
-
-    return [{
-      type: "text",
-      text: JSON.stringify(transformedProduct, null, 2)
-    }];
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return [{ type: "text", text: "Error fetching product" }];
-  }
-}
+server.registerResource(
+  "show-product-html",
+  "ui://widget/show-product.html",
+  {
+    name: "show-product-html",
+    description: "HTML widget for displaying T-shirt products",
+    mimeType: "text/html+skybridge",
+  },
+  async () => ({
+    contents: [
+      {
+        uri: "ui://widget/show-product.html",
+        mimeType: "text/html+skybridge",
+        text: `
+<div id="tanstack-app-root"></div>
+<script src="${resourceOrigin}/mcp-widget.js"></script>
+        `.trim(),
+        _meta: {
+          "openai/widgetDomain": "https://chatgpt.com",
+          "openai/widgetDescription": "Displays a T-shirt product with styling",
+          "openai/widgetCSP": {
+            connect_domains: [resourceOrigin],
+            resource_domains: [resourceOrigin],
+          },
+        },
+      },
+    ],
+  })
+);
 
 export async function GET() {
   return new Response(
     JSON.stringify({
-      ...serverInfo,
+      name: "agentic-tshirt-shop",
+      version: "1.0.0",
+      description: "Agentic T-shirt Shop MCP Server",
       capabilities: {
         tools: {
-          listChanged: false
+          listChanged: true
+        },
+        resources: {
+          listChanged: true
         }
       }
     }),
@@ -136,52 +172,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { method, params, id } = body;
-
-    let result;
-
-    switch (method) {
-      case "tools/list":
-        result = { tools: Object.values(tools) };
-        break;
-
-      case "tools/call":
-        const { name, arguments: args = {} } = params;
-        result = { content: await callTool(name, args) };
-        break;
-
-      default:
-        result = { error: { code: -32601, message: "Method not found" } };
-    }
-
-    return new Response(
-      JSON.stringify({ jsonrpc: "2.0", id, result }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
-  } catch (error) {
-    console.error('MCP request error:', error);
-    return new Response(
-      JSON.stringify({
-        jsonrpc: "2.0",
-        error: { code: -32000, message: "Internal server error" }
-      }),
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  return await handleMcpRequest(request, server);
 }
 
 export async function OPTIONS() {
