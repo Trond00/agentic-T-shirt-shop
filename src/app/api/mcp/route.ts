@@ -124,14 +124,11 @@ export async function GET() {
       name: "agentic-tshirt-shop",
       version: "1.0.0",
       description: "Agentic T-shirt Shop MCP Server",
-      capabilities: {
-        tools: {
-          listChanged: true
-        },
-        resources: {
-          listChanged: true
+          capabilities: {
+            tools: {
+              listChanged: true
+           }
         }
-      }
     }),
     {
       status: 200,
