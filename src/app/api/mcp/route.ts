@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { config } from '@/lib/config';
 import { getProducts } from '@/lib/supabase/products';
 import { getProductBySlug } from '@/lib/supabase/products';
 import { CatalogFilters } from '@/lib/types';
@@ -7,77 +6,36 @@ import { CatalogFilters } from '@/lib/types';
 // MCP Server Info
 const serverInfo = {
   name: "agentic-tshirt-shop",
-  version: "1.0.0",
-  description: "Agentic T-shirt Shop MCP Server - Browse and display T-shirt products",
+  version: "1.0.0"
 };
 
-const resourceOrigin = (() => {
-  try {
-    return new URL(config.baseURL).origin;
-  } catch {
-    return "http://localhost:3000";
-  }
-})();
-
-// Define available tools
+// Define available tools with proper JSON Schema
 const tools = {
   "getProducts": {
     name: "getProducts",
-    description: "Get all T-shirt products from the Agentic Shop catalog",
+    description: "Get T-shirt products from the Agentic Shop catalog",
     inputSchema: {
       type: "object",
       properties: {
         limit: {
           type: "number",
-          description: "Maximum number of products to return (default: 20)",
-          default: 20
-        },
-        category: {
-          type: "string",
-          description: "Filter by category slug"
+          description: "Maximum number of products to return (default: 10)"
         }
       }
     }
   },
   "showProduct": {
     name: "showProduct",
-    description: "Show a specific T-shirt product from the Agentic Shop",
+    description: "Show details of a specific T-shirt product",
     inputSchema: {
       type: "object",
       properties: {
         slug: {
           type: "string",
-          description: "The slug of the product to show",
+          description: "The slug of the product to show"
         }
       },
       required: ["slug"]
-    },
-    _meta: {
-      "openai/outputTemplate": "ui://widget/show-product.html",
-      "openai/toolInvocation/invoking": "Showing a product...",
-      "openai/toolInvocation/invoked": "Showed a product!",
-    }
-  }
-};
-
-// Define available resources
-const resources = {
-  "show-product-html": {
-    uri: "ui://widget/show-product.html",
-    name: "Product Display Widget",
-    description: "HTML widget for displaying T-shirt products",
-    mimeType: "text/html+skybridge",
-    text: `
-<div id="tanstack-app-root"></div>
-<script src="${resourceOrigin}/mcp-widget.js"></script>
-    `.trim(),
-    _meta: {
-      "openai/widgetDomain": "https://chatgpt.com",
-      "openai/widgetDescription": "Displays a T-shirt product with styling",
-      "openai/widgetCSP": {
-        connect_domains: [resourceOrigin],
-        resource_domains: [resourceOrigin],
-      },
     }
   }
 };
@@ -94,14 +52,14 @@ async function callTool(toolName: string, args: any) {
   }
 }
 
-async function getAllProducts(args: { limit?: number; category?: string } = {}) {
+async function getAllProducts(args: { limit?: number } = {}) {
   try {
     const filters: CatalogFilters = {
       search: '',
-      category: args.category || '',
+      category: '',
       sort: 'newest',
       page: 1,
-      limit: Math.min(args.limit || 20, 50),
+      limit: Math.min(args.limit || 10, 50),
     };
 
     const { products } = await getProducts(filters);
@@ -114,10 +72,7 @@ async function getAllProducts(args: { limit?: number; category?: string } = {}) 
       price: (product.unit_amount / 100).toFixed(2),
       currency: product.currency,
       category: product.category?.name || 'General',
-      image_url: product.image_url ? `${resourceOrigin}/api/products/${product.slug}/image` : null,
-      product_url: `${resourceOrigin}/products/${product.slug}`,
-      in_stock: product.inventory_count > 0,
-      stock_count: product.inventory_count,
+      in_stock: product.inventory_count > 0
     }));
 
     return [{
@@ -146,11 +101,7 @@ async function showProduct(slug: string) {
       price: (product.unit_amount / 100).toFixed(2),
       currency: product.currency,
       category: product.category?.name || 'General',
-      image_url: product.image_url ? `${resourceOrigin}/api/products/${product.slug}/image` : null,
-      product_url: `${resourceOrigin}/products/${product.slug}`,
       in_stock: product.inventory_count > 0,
-      stock_count: product.inventory_count,
-      rating: product.averageRating,
       review_count: product.reviewCount,
     };
 
@@ -169,9 +120,8 @@ export async function GET() {
     JSON.stringify({
       ...serverInfo,
       capabilities: {
-        tools: { listChanged: true },
-        resources: { listChanged: true },
-      },
+        tools: {}
+      }
     }),
     {
       status: 200,
@@ -185,7 +135,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { method, params, id } = await request.json();
+    const body = await request.json();
+    const { method, params, id } = body;
+
     let result;
 
     switch (method) {
@@ -194,22 +146,8 @@ export async function POST(request: NextRequest) {
         break;
 
       case "tools/call":
-        const { name, arguments: args } = params;
+        const { name, arguments: args = {} } = params;
         result = { content: await callTool(name, args) };
-        break;
-
-      case "resources/list":
-        result = { resources: Object.values(resources) };
-        break;
-
-      case "resources/read":
-        const resourceName = params.uri.replace("ui://widget/", "").replace(".html", "");
-        const resource = resources[resourceName as keyof typeof resources];
-        if (resource) {
-          result = { contents: [resource] };
-        } else {
-          result = { error: { code: -32000, message: "Resource not found" } };
-        }
         break;
 
       default:
