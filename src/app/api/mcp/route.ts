@@ -116,35 +116,7 @@ server.registerTool(
   }
 );
 
-server.registerResource(
-  "show-product-html",
-  "ui://widget/show-product.html",
-  {
-    name: "show-product-html",
-    description: "HTML widget for displaying T-shirt products",
-    mimeType: "text/html+skybridge",
-  },
-  async () => ({
-    contents: [
-      {
-        uri: "ui://widget/show-product.html",
-        mimeType: "text/html+skybridge",
-        text: `
-<div id="tanstack-app-root"></div>
-<script src="${resourceOrigin}/mcp-widget.js"></script>
-        `.trim(),
-        _meta: {
-          "openai/widgetDomain": "https://chatgpt.com",
-          "openai/widgetDescription": "Displays a T-shirt product with styling",
-          "openai/widgetCSP": {
-            connect_domains: [resourceOrigin],
-            resource_domains: [resourceOrigin],
-          },
-        },
-      },
-    ],
-  })
-);
+
 
 export async function GET() {
   return new Response(
