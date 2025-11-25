@@ -132,7 +132,7 @@ const handler = createMcpHandler(
     basePath: "",
     verboseLogs: true,
     maxDuration: 60,
-    disableSse: false, // Enable SSE transport (requires Redis)
+    disableSse: true, // Enable SSE transport (requires Redis)
   },
 );
 
