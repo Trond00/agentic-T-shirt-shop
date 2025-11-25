@@ -1,7 +1,15 @@
 import { updateSession } from "@/lib/supabase/middleware";
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // 🔑 Skip Supabase session middleware for MCP endpoint
+  if (pathname.startsWith("/api/mcp")) {
+    return NextResponse.next();
+  }
+
+  // Everything else still goes through Supabase session handling
   return await updateSession(request);
 }
 
@@ -13,7 +21,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
