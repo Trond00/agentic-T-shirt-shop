@@ -19,7 +19,7 @@ const handler = createMcpHandler(
       },
       async ({ limit, page, category, search, sort }) => {
         try {
-          // Build filters for our catalog
+          // Build filters for our cbatalog
           const filters: CatalogFilters = {
             limit,
             page,
