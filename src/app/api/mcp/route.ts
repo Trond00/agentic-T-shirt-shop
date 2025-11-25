@@ -1,10 +1,20 @@
+// src/app/api/mcp/route.ts
+import { NextRequest } from "next/server";
 import { McpServer } from "@/lib/mcp-server";
-import { NextRequest, NextResponse } from "next/server";
 import { handleMcpRequest } from "@/lib/mcp-handler";
 import { config } from "@/lib/config";
-import { getProducts } from '@/lib/supabase/products';
-import { getProductBySlug } from '@/lib/supabase/products';
-import { CatalogFilters } from '@/lib/types';
+import { getProducts, getProductBySlug } from "@/lib/supabase/products";
+import { CatalogFilters } from "@/lib/types";
+
+export const runtime = "nodejs"; // make sure Supabase can run on Vercel
+
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Max-Age": "86400",
+  "Content-Type": "application/json",
+};
 
 const server = new McpServer({
   name: "agentic-tshirt-shop",
@@ -19,6 +29,8 @@ const resourceOrigin = (() => {
   }
 })();
 
+// ---- tools registration (unchanged) ----
+// getProducts
 server.registerTool(
   "getProducts",
   {
@@ -27,31 +39,32 @@ server.registerTool(
   async () => {
     try {
       const filters: CatalogFilters = {
-        search: '',
-        category: '',
-        sort: 'newest',
+        search: "",
+        category: "",
+        sort: "newest",
         page: 1,
         limit: 20,
       };
 
       const { products } = await getProducts(filters);
 
-      const transformedProducts = products.map(product => ({
+      const transformedProducts = products.map((product) => ({
         id: product.id,
         name: product.name,
         slug: product.slug,
-        description: product.description || `${product.name} - High quality product`,
+        description:
+          product.description || `${product.name} - High quality product`,
         price: (product.unit_amount / 100).toFixed(2),
         currency: product.currency,
-        category: product.category?.name || 'General',
-        in_stock: product.inventory_count > 0
+        category: product.category?.name || "General",
+        in_stock: product.inventory_count > 0,
       }));
 
       return {
         content: [{ type: "text", text: JSON.stringify(transformedProducts) }],
       };
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
       return {
         content: [{ type: "text", text: "Error fetching products" }],
       };
@@ -59,6 +72,7 @@ server.registerTool(
   }
 );
 
+// showProduct
 server.registerTool(
   "showProduct",
   {
@@ -66,9 +80,12 @@ server.registerTool(
     inputSchema: {
       type: "object",
       properties: {
-        slug: { type: "string", description: "The slug of the product to show" }
+        slug: {
+          type: "string",
+          description: "The slug of the product to show",
+        },
       },
-      required: ["slug"]
+      required: ["slug"],
     },
     _meta: {
       "openai/outputTemplate": "ui://widget/show-product.html",
@@ -90,10 +107,11 @@ server.registerTool(
         id: product.id,
         name: product.name,
         slug: product.slug,
-        description: product.description || `${product.name} - High quality product`,
+        description:
+          product.description || `${product.name} - High quality product`,
         price: (product.unit_amount / 100).toFixed(2),
         currency: product.currency,
-        category: product.category?.name || 'General',
+        category: product.category?.name || "General",
         in_stock: product.inventory_count > 0,
         review_count: product.reviewCount,
       };
@@ -108,7 +126,7 @@ server.registerTool(
         structuredContent: transformedProduct,
       };
     } catch (error) {
-      console.error('Error fetching product:', error);
+      console.error("Error fetching product:", error);
       return {
         content: [{ type: "text", text: "Error fetching product" }],
       };
@@ -116,42 +134,34 @@ server.registerTool(
   }
 );
 
-
+// ---- HTTP handlers ----
 
 export async function GET() {
   return new Response(
     JSON.stringify({
       name: "agentic-tshirt-shop",
       version: "1.0.0",
-      description: "Cool Agentic T-shirt Shop MCP Server",
-          capabilities: {
-            tools: {
-              listChanged: true
-           }
-        }
+      description: "Agentic T-shirt Shop MCP Server",
+      capabilities: {
+        tools: {
+          listChanged: true,
+        },
+      },
     }),
     {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "https://chatgpt.com",
-      },
+      headers: CORS_HEADERS,
     }
   );
 }
 
 export async function POST(request: NextRequest) {
-  return await handleMcpRequest(request, server);
+  return handleMcpRequest(request, server);
 }
 
 export async function OPTIONS() {
   return new Response(null, {
     status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "https://chatgpt.com",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-      "Access-Control-Allow-Headers": "*",
-      "Access-Control-Max-Age": "86400",
-    },
+    headers: CORS_HEADERS,
   });
 }
