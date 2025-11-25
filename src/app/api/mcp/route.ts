@@ -123,7 +123,7 @@ export async function GET() {
     JSON.stringify({
       name: "agentic-tshirt-shop",
       version: "1.0.0",
-      description: "Agentic T-shirt Shop MCP Server",
+      description: "Cool Agentic T-shirt Shop MCP Server",
           capabilities: {
             tools: {
               listChanged: true

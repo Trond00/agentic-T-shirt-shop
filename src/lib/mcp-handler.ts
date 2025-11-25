@@ -2,57 +2,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { McpServer } from "./mcp-server";
 
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+  "Access-Control-Max-Age": "86400",
+  "Content-Type": "application/json",
+};
+
 export async function handleMcpRequest(
   request: NextRequest,
   server: McpServer
 ): Promise<NextResponse> {
   try {
+    // If someone accidentally hits this with OPTIONS directly
+    if (request.method === "OPTIONS") {
+      return new NextResponse(null, {
+        status: 200,
+        headers: CORS_HEADERS,
+      });
+    }
+
     const body = await request.json();
     const { method, params, id } = body;
 
     if (method === "initialize") {
-      const protocolVersion = "2024-11-05";
+      const protocolVersion = params?.protocolVersion ?? "2024-11-05";
 
-      const response = {
+      const responseBody = {
         jsonrpc: "2.0" as const,
         id,
         result: {
           protocolVersion,
           capabilities: {
             tools: {
-              // matches your GET /api/mcp metadata
               listChanged: true,
             },
-            // you can add these later if you implement them
-            // resources: {},
-            // prompts: {},
           },
           serverInfo: {
             name: "agentic-tshirt-shop",
             version: "1.0.0",
           },
-          // optional, but some clients like having this
           instructions:
             "MCP server for the Agentic T-shirt Shop, exposes catalog tools like getProducts and showProduct.",
         },
       };
 
-      return NextResponse.json(response, {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "https://chatgpt.com",
-        },
+      return NextResponse.json(responseBody, {
+        headers: CORS_HEADERS,
       });
     }
 
-    // For other methods, use the server's handler
-    const response = await server.handleRequest(body);
+    // All other MCP methods (tools/list, tools/call, resources/*, …)
+    const rpcResponse = await server.handleRequest(body);
 
-    return NextResponse.json(response, {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "https://chatgpt.com",
-      },
+    return NextResponse.json(rpcResponse, {
+      headers: CORS_HEADERS,
     });
   } catch (error) {
     console.error("MCP request handling error:", error);
@@ -69,10 +74,7 @@ export async function handleMcpRequest(
       },
       {
         status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "https://chatgpt.com",
-          "Content-Type": "application/json",
-        },
+        headers: CORS_HEADERS,
       }
     );
   }
