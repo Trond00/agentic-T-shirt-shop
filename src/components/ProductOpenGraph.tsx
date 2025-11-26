@@ -23,6 +23,11 @@ export function ProductOpenGraph({ product }: ProductOpenGraphProps) {
 
   return (
     <>
+      {/* Image preload for scrapers */}
+      {product.image_url && (
+        <link rel="preload" as="image" href={product.image_url} />
+      )}
+
       {/* Open Graph / Facebook */}
       <meta property="og:type" content="product" />
       <meta property="og:title" content={title} />

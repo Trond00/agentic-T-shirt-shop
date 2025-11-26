@@ -77,6 +77,7 @@ export default async function Product({ params }: ProductPageProps) {
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
+                unoptimized
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
