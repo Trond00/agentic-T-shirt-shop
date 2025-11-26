@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-shirt Widget</title>
+    <style>
+        body {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            margin: 0;
+            border-radius: 12px;
+            min-height: 200px;
+        }
+        .product-card {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .product-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .product-price {
+            font-size: 1.2em;
+            color: #28a745;
+            font-weight: 500;
+        }
+        .success-text {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="product-card">
+        <div class="product-title">🎉 WIDGET WORKING! 🎉</div>
+        <div class="product-price">Widget test successful!</div>
+        <div class="success-text">This confirms MCP widget metadata is working correctly!</div>
+    </div>
+
+    <script>
+        // Widget test - let's show what data we have
+        const product = window.structuredContent?.product;
+
+        if (product) {
+            document.querySelector('.product-title').textContent = `✅ ${product.name}`;
+            document.querySelector('.product-price').textContent = `$${product.unit_amount / 100}`;
+            document.querySelector('.success-text').textContent =
+                `Product "${product.slug}" loaded successfully! Widget pipeline working! 🛒`;
+        } else {
+            document.querySelector('.product-title').textContent = '❌ No product data';
+            document.querySelector('.success-text').textContent = 'Widget loaded but product data not available';
+        }
+
+        console.log('MCP Widget loaded successfully!', { structuredContent: window.structuredContent });
+    </script>
+</body>
+</html>

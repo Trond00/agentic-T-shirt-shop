@@ -19,7 +19,7 @@ const handler = createMcpHandler(
       },
       async ({ limit, page, category, search, sort }) => {
         try {
-          // Build filters for our cbatalog
+          // Build filters for our catalog
           const filters: CatalogFilters = {
             limit,
             page,
@@ -115,6 +115,67 @@ const handler = createMcpHandler(
         }
       }
     );
+
+    // showProduct tool - Visual product display with widget rendering
+    server.tool(
+      "showProduct",
+      "Show detailed information about a specific product with visual display",
+      {
+        slug: z.string().describe("The unique slug identifier of the product"),
+      },
+      async ({ slug }) => {
+        try {
+          const product = await getProductBySlug(slug);
+
+          if (!product) {
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: `Product with slug "${slug}" not found`,
+                },
+              ],
+              structuredContent: {
+                found: false,
+                slug,
+              },
+            };
+          }
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Loading product ${product.name}...`,
+              },
+            ],
+            structuredContent: {
+              product,
+              found: true,
+            },
+            _meta: {
+              "openai/outputTemplate": "https://agentic-t-shirt-shop.vercel.app/widgets/show-product.html",
+              "openai/toolInvocation/invoking": "Showing product...",
+              "openai/toolInvocation/invoked": "Product displayed!",
+            },
+          };
+        } catch (error) {
+          console.error("showProduct error:", error);
+          return {
+            content: [
+              {
+                type: "text",
+                text: "Error loading product display",
+              },
+            ],
+            structuredContent: {
+              error: error instanceof Error ? error.message : "Unknown error",
+            },
+          };
+        }
+      }
+    );
+
   },
   {
     capabilities: {
@@ -125,6 +186,9 @@ const handler = createMcpHandler(
         getProductBySlug: {
           description: "Get detailed information about a specific t-shirt product by slug",
         },
+        showProduct: {
+          description: "Show a visual product display with pricing and purchase options",
+        },
       },
     },
   },
@@ -132,7 +196,7 @@ const handler = createMcpHandler(
     basePath: "",
     verboseLogs: true,
     maxDuration: 60,
-    disableSse: true, // Enable SSE transport (requires Redis)
+    disableSse: true, // Stateless HTTP for simplicity
   },
 );
 
