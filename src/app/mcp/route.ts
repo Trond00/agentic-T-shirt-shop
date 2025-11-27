@@ -1,252 +1,406 @@
-import { createMcpHandler } from "mcp-handler";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getProducts, getProductBySlug } from "@/lib/supabase/products";
 import { CatalogFilters } from "@/lib/types";
+import { config } from "@/lib/config";
 
-// T-shirt shop MCP server using official Vercel adapter
-const handler = createMcpHandler(
-  async (server) => {
-    // getProducts tool - List t-shirt products from catalog
-    server.tool(
-      "getProducts",
-      "Get a list of t-shirt products from the catalog",
-      {
-        limit: z.number().optional().default(10),
-        page: z.number().optional().default(1),
-        category: z.string().optional(),
-        search: z.string().optional(),
-        sort: z.enum(['name-asc', 'name-desc', 'price-asc', 'price-desc', 'newest']).optional().default('newest'),
-      },
-      async ({ limit, page, category, search, sort }) => {
-        try {
-          // Build filters for our catalog
-          const filters: CatalogFilters = {
-            limit,
-            page,
-            category: category || '',
-            search: search || '',
-            sort,
-          };
+const server = new McpServer({
+  name: "t-shirt-shop",
+  version: "1.0.0",
+});
 
-          const result = await getProducts(filters);
+const resourceOrigin = (() => {
+  try {
+    return new URL(config.baseURL).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+})();
 
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Found ${result.products.length} t-shirt products (${result.totalCount} total)`,
-              },
-            ],
-            structuredContent: {
-              products: result.products,
-              totalCount: result.totalCount,
-              page,
-              limit,
-            },
-          };
-        } catch (error) {
-          console.error("getProducts error:", error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error fetching products",
-              },
-            ],
-            structuredContent: {
-              error: error instanceof Error ? error.message : "Unknown error",
-            },
-          };
-        }
-      }
-    );
-
-    // getProductBySlug tool - Get detailed product info
-   server.tool(
-      "getProductBySlug",
-      "Get detailed information about a specific t-shirt product",
-      {
-        slug: z.string().min(1, "Slug is required"),
-      },
-      async ({ slug }) => {
-        try {
-          const product = await getProductBySlug(slug);
-
-          if (!product) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Product with slug "${slug}" not found`,
-                },
-              ],
-              structuredContent: {
-                found: false,
-                slug,
-              },
-            };
-          }
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Found product: ${product.name} - $${(product.unit_amount / 100).toFixed(2)}`,
-              },
-            ],
-            structuredContent: {
-              product,
-              found: true,
-            },
-          };
-        } catch (error) {
-          console.error("getProductBySlug error:", error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error fetching product",
-              },
-            ],
-            structuredContent: {
-              error: error instanceof Error ? error.message : "Unknown error",
-            },
-          };
-        }
-      }
-    );
-
-    // showProduct tool - Visual product display with widget rendering
-    server.tool(
-      "showProduct",
-      "Show detailed information about a specific product with visual display",
-      {
-        slug: z.string().describe("The unique slug identifier of the product"),
-      },
-      async ({ slug }) => {
-        try {
-          const product = await getProductBySlug(slug);
-
-          if (!product) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Product with slug "${slug}" not found`,
-                },
-              ],
-              structuredContent: {
-                found: false,
-                slug,
-              },
-            };
-          }
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Loading product ${product.name}...`,
-              },
-            ],
-            structuredContent: {
-              product,
-              found: true,
-            },
-            _meta: {
-              "openai/outputTemplate": "https://agentic-t-shirt-shop.vercel.app/widgets/show-product.html",
-              "openai/toolInvocation/invoking": "Showing product...",
-              "openai/toolInvocation/invoked": "Product displayed!",
-            },
-          };
-        } catch (error) {
-          console.error("showProduct error:", error);
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Error loading product display",
-              },
-            ],
-            structuredContent: {
-              error: error instanceof Error ? error.message : "Unknown error",
-            },
-          };
-        }
-      }
-    );
-
-  },
-  {
-    capabilities: {
-      tools: {
-        getProducts: {
-          name: "getProducts",
-          description: "Get a list of t-shirt products from the catalog with filtering and pagination",
-          inputSchema: {
-            type: "object",
-            properties: {
-              limit: {
-                type: "number",
-                description: "Maximum number of products to return"
-              },
-              page: {
-                type: "number",
-                description: "Page number for pagination"
-              },
-              category: {
-                type: "string",
-                description: "Product category filter"
-              },
-              search: {
-                type: "string",
-                description: "Search term to filter products"
-              },
-              sort: {
-                type: "string",
-                enum: ["name-asc", "name-desc", "price-asc", "price-desc", "newest"],
-                description: "Sort order for products"
-              }
-            }
-          }
-        },
-        getProductBySlug: {
-          name: "getProductBySlug",
-          description: "Get detailed information about a specific t-shirt product by slug",
-          inputSchema: {
-            type: "object",
-            properties: {
-              slug: {
-                type: "string",
-                description: "The unique slug identifier of the product"
-              }
-            },
-            required: ["slug"]
-          }
-        },
-        showProduct: {
-          name: "showProduct",
-          description: "Show a visual product display with pricing and purchase options",
-          inputSchema: {
-            type: "object",
-            properties: {
-              slug: {
-                type: "string",
-                description: "The unique slug identifier of the product"
-              }
-            },
-            required: ["slug"]
-          }
+const widgetResource = {
+  contents: [
+    {
+      uri: "ui://widget/show-product.html",
+      mimeType: "text/html+skybridge",
+          text: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .content {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="content">Product Widget - Coming Soon!</div>
+</body>
+</html>
+          `.trim(),
+      _meta: {
+        "openai/widgetDomain": "https://chatgpt.com",
+        "openai/widgetDescription": "Displays a product with pricing and purchase options",
+        "openai/widgetCSP": {
+          connect_domains: [resourceOrigin],
+          resource_domains: [resourceOrigin],
         },
       },
     },
-  },
+  ],
+};
+
+server.registerTool(
+  "getProducts",
   {
-    basePath: "",
-    verboseLogs: true,
-    maxDuration: 60,
-    disableSse: true, // Stateless HTTP for simplicity
+    description: "Get all t-shirt products from the catalog",
   },
+  async () => {
+    try {
+      const filters: CatalogFilters = {
+        limit: 10,
+        page: 1,
+        category: '',
+        search: '',
+        sort: 'newest',
+      };
+      const result = await getProducts(filters);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result.products) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: "Error fetching products" }],
+      };
+    }
+  }
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+server.registerTool(
+  "getProductBySlug",
+  {
+    description: "Get detailed information about a specific t-shirt product",
+    inputSchema: {
+      slug: z.string().describe("The unique slug identifier of the product"),
+    },
+  },
+  async ({ slug }) => {
+    try {
+      const product = await getProductBySlug(slug);
+      if (!product) {
+        return {
+          content: [{ type: "text", text: "Product not found" }],
+        };
+      }
+      return {
+        content: [{ type: "text", text: JSON.stringify(product) }],
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: "Error fetching product" }],
+      };
+    }
+  }
+);
+
+server.registerTool(
+  "showProduct",
+  {
+    description: "Show a t-shirt product with visual display",
+    inputSchema: {
+      slug: z.string().describe("The slug of the product to show"),
+    },
+  },
+  async ({ slug }) => {
+    try {
+      const product = await getProductBySlug(slug);
+      if (!product) {
+        return {
+          content: [{ type: "text", text: "Product not found" }],
+        };
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(product),
+          },
+        ],
+        structuredContent: product as any,
+      };
+    } catch (error) {
+      return {
+        content: [{ type: "text", text: "Error loading product" }],
+      };
+    }
+  }
+);
+
+async function handleMCPRequest(request: Request, server: McpServer) {
+  try {
+    const body = await request.json();
+
+    // Simple MCP request handler
+    if (body.method === "tools/list") {
+      return new Response(JSON.stringify({
+        tools: [
+          {
+            name: "getProducts",
+            description: "Get all t-shirt products from the catalog",
+          },
+          {
+            name: "getProductBySlug",
+            description: "Get detailed information about a specific t-shirt product",
+            inputSchema: {
+              type: "object",
+              properties: {
+                slug: {
+                  type: "string",
+                  description: "The unique slug identifier of the product",
+                },
+              },
+              required: ["slug"],
+            },
+          },
+          {
+            name: "showProduct",
+            description: "Show a t-shirt product with visual display",
+            inputSchema: {
+              type: "object",
+              properties: {
+                slug: {
+                  type: "string",
+                  description: "The slug of the product to show",
+                },
+              },
+              required: ["slug"],
+            },
+            _meta: {
+              "openai/outputTemplate": "ui://widget/show-product.html",
+              "openai/toolInvocation/invoking": "Showing product...",
+              "openai/toolInvocation/invoked": "Product displayed!",
+            },
+          },
+        ],
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    if (body.method === "tools/call") {
+      const { name, arguments: args } = body.params || {};
+
+      let result;
+      switch (name) {
+        case "getProducts":
+          try {
+            const filters: CatalogFilters = {
+              limit: 10,
+              page: 1,
+              category: '',
+              search: '',
+              sort: 'newest',
+            };
+            const productsResult = await getProducts(filters);
+            result = {
+              content: [{ type: "text", text: JSON.stringify(productsResult.products) }],
+            };
+          } catch (error) {
+            result = {
+              content: [{ type: "text", text: "Error fetching products" }],
+            };
+          }
+          break;
+
+        case "getProductBySlug":
+          try {
+            const { slug } = args as { slug: string };
+            const product = await getProductBySlug(slug);
+            if (!product) {
+              result = {
+                content: [{ type: "text", text: "Product not found" }],
+              };
+            } else {
+              result = {
+                content: [{ type: "text", text: JSON.stringify(product) }],
+              };
+            }
+          } catch (error) {
+            result = {
+              content: [{ type: "text", text: "Error fetching product" }],
+            };
+          }
+          break;
+
+        case "showProduct":
+          try {
+            const { slug } = args as { slug: string };
+            const product = await getProductBySlug(slug);
+            if (!product) {
+              result = {
+                content: [{ type: "text", text: "Product not found" }],
+              };
+            } else {
+              result = {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify(product),
+                  },
+                ],
+                structuredContent: product as any,
+              };
+            }
+          } catch (error) {
+            result = {
+              content: [{ type: "text", text: "Error loading product" }],
+            };
+          }
+          break;
+
+        default:
+          throw new Error(`Unknown tool: ${name}`);
+      }
+
+      return new Response(JSON.stringify(result), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    if (body.method === "resources/list") {
+      return new Response(JSON.stringify({
+        resources: [
+          {
+            uri: "ui://widget/show-product.html",
+            name: "Product Display Widget",
+            description: "Widget for displaying t-shirt products",
+            mimeType: "text/html+skybridge",
+          },
+        ],
+      }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    if (body.method === "resources/read") {
+      const { uri } = body.params || {};
+      if (uri === "ui://widget/show-product.html") {
+        const resource = {
+          contents: [
+            {
+              uri: "ui://widget/show-product.html",
+              mimeType: "text/html+skybridge",
+              text: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .content {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="content">Product Widget - Coming Soon!</div>
+</body>
+</html>
+              `.trim(),
+              _meta: {
+                "openai/widgetDomain": "https://chatgpt.com",
+                "openai/widgetDescription": "Displays a t-shirt product with pricing and purchase options",
+                "openai/widgetCSP": {
+                  connect_domains: [resourceOrigin],
+                  resource_domains: [resourceOrigin],
+                },
+              },
+            },
+          ],
+        };
+
+        return new Response(JSON.stringify(resource), {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+    }
+
+    return new Response(JSON.stringify({ error: "Method not found" }), {
+      status: 404,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+
+  } catch (error) {
+    console.error("MCP request error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }
+}
+
+export async function POST(request: Request) {
+  return await handleMCPRequest(request, server);
+}
+
+export async function GET() {
+  return new Response(
+    JSON.stringify({
+      name: "t-shirt-shop",
+      version: "1.0.0",
+      description: "T-shirt shop MCP Server",
+      capabilities: {
+        tools: true,
+        resources: true,
+      },
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    }
+  );
+}
