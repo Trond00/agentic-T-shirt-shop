@@ -118,7 +118,7 @@ const handler = createMcpHandler(
     );
 
     // showProduct tool - Visual product display with widget rendering
-    server.tool(
+    /*server.tool(
       "showProduct",
       "Show detailed information about a specific product with visual display",
       {
@@ -175,7 +175,7 @@ const handler = createMcpHandler(
           };
         }
       }
-    );
+    );*/
 
   },
   {
