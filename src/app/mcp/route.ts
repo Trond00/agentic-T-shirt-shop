@@ -62,7 +62,7 @@ const handler = createMcpHandler(
     );
 
     // getProductBySlug tool - Get detailed product info
-    server.tool(
+  /* server.tool(
       "getProductBySlug",
       "Get detailed information about a specific t-shirt product",
       {
@@ -115,7 +115,7 @@ const handler = createMcpHandler(
         }
       }
     );
-
+*/
     // showProduct tool - Visual product display with widget rendering
     server.tool(
       "showProduct",
