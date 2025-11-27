@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 🔑 Skip Supabase session middleware for MCP endpoint
-  if (pathname.startsWith("/api/mcp")) {
+  if (pathname.startsWith("/mcp")) {
     return NextResponse.next();
   }
 

@@ -62,7 +62,7 @@ const handler = createMcpHandler(
     );
 
     // getProductBySlug tool - Get detailed product info
-  /* server.tool(
+   server.tool(
       "getProductBySlug",
       "Get detailed information about a specific t-shirt product",
       {
@@ -115,7 +115,7 @@ const handler = createMcpHandler(
         }
       }
     );
-*/
+
     // showProduct tool - Visual product display with widget rendering
     server.tool(
       "showProduct",
@@ -181,13 +181,62 @@ const handler = createMcpHandler(
     capabilities: {
       tools: {
         getProducts: {
+          name: "getProducts",
           description: "Get a list of t-shirt products from the catalog with filtering and pagination",
+          inputSchema: {
+            type: "object",
+            properties: {
+              limit: {
+                type: "number",
+                description: "Maximum number of products to return"
+              },
+              page: {
+                type: "number",
+                description: "Page number for pagination"
+              },
+              category: {
+                type: "string",
+                description: "Product category filter"
+              },
+              search: {
+                type: "string",
+                description: "Search term to filter products"
+              },
+              sort: {
+                type: "string",
+                enum: ["name-asc", "name-desc", "price-asc", "price-desc", "newest"],
+                description: "Sort order for products"
+              }
+            }
+          }
         },
         getProductBySlug: {
+          name: "getProductBySlug",
           description: "Get detailed information about a specific t-shirt product by slug",
+          inputSchema: {
+            type: "object",
+            properties: {
+              slug: {
+                type: "string",
+                description: "The unique slug identifier of the product"
+              }
+            },
+            required: ["slug"]
+          }
         },
         showProduct: {
+          name: "showProduct",
           description: "Show a visual product display with pricing and purchase options",
+          inputSchema: {
+            type: "object",
+            properties: {
+              slug: {
+                type: "string",
+                description: "The unique slug identifier of the product"
+              }
+            },
+            required: ["slug"]
+          }
         },
       },
     },
