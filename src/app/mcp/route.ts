@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getProducts, getProductBySlug } from "@/lib/supabase/products";
 import { CatalogFilters } from "@/lib/types";
 
+
 // T-shirt shop MCP server using official Vercel adapter
 const handler = createMcpHandler(
   async (server) => {
@@ -154,7 +155,7 @@ const handler = createMcpHandler(
               found: true,
             },
             _meta: {
-               "openai/outputTemplate": "ui://widget/show-product.html",
+               "openai/outputTemplate": "httpstp/agentic-t-shirt-shop.vercel.apps://agesntic-t-shirt-shop.vercel.app/widgets/show-product.html",
               "openai/toolInvocation/invoking": "Showing product...",
               "openai/toolInvocation/invoked": "Product displayed!",
             },
@@ -203,7 +204,7 @@ const handler = createMcpHandler(
                 description: "Search term to filter products"
               },
               sort: {
-                type: "string",
+                "type": "string",
                 enum: ["name-asc", "name-desc", "price-asc", "price-desc", "newest"],
                 description: "Sort order for products"
               }
