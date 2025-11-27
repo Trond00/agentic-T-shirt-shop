@@ -154,7 +154,7 @@ const handler = createMcpHandler(
               found: true,
             },
             _meta: {
-              "openai/outputTemplate": "https://agentic-t-shirt-shop.vercel.app/widgets/show-product.html",
+               "openai/outputTemplate": "ui://widget/show-product.html",
               "openai/toolInvocation/invoking": "Showing product...",
               "openai/toolInvocation/invoked": "Product displayed!",
             },
