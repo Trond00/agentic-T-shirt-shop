@@ -6,9 +6,9 @@
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635bff)](https://stripe.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ecf8e)](https://supabase.com/)
 
-A proof-of-concept e-commerce platform demonstrating **agentic commerce** - where AI agents can autonomously browse, recommend, and facilitate purchases through natural language interactions.
+A proof-of-concept e-commerce platform demonstrating **agentic commerce**, where AI agents can autonomously browse, recommend, and facilitate purchases through natural language interactions.
 
-![Agentic Shop Preview](./public/og-image.png)
+![Agentic Shop Preview](https://agentic-t-shirt-shop.vercel.app/)
 
 ## About
 
@@ -48,23 +48,23 @@ This proof-of-concept was built to:
 ### 💳 Technical Infrastructure
 
 - **Database**: Supabase for products, orders, and user data
-- **Caching**: Redis for performance optimization
+- **Caching**: Redis for performance optimization (tried using it, but didnt manage to get it to work)
 - **Security**: Type-safe APIs with Zod validation
 - **Responsive**: Mobile-first design with Tailwind CSS
 - **Webhooks**: Real-time Stripe payment confirmations
 
 ## Tech Stack
 
-| Category           | Technologies                                       |
-| ------------------ | -------------------------------------------------- |
-| **Frontend**       | Next.js 16, React 19, TypeScript, Tailwind CSS     |
-| **Backend**        | Next.js API Routes, Supabase                       |
-| **Payments**       | Stripe Checkout API                                |
-| **AI Integration** | Model Context Protocol (MCP), OpenAI Product Feeds |
-| **Database**       | PostgreSQL (via Supabase)                          |
-| **Caching**        | Redis                                              |
-| **Deployment**     | Vercel                                             |
-| **Validation**     | Zod                                                |
+| Category           | Technologies                                               |
+| ------------------ | ---------------------------------------------------------- |
+| **Frontend**       | Next.js 16, React 19, TypeScript, Tailwind CSS             |
+| **Backend**        | Next.js API Routes, Supabase                               |
+| **Payments**       | Stripe Checkout API                                        |
+| **AI Integration** | Model Context Protocol (MCP), OpenAI Product Feeds         |
+| **Database**       | PostgreSQL (via Supabase)                                  |
+| **Caching**        | Redis (tried using it, but didnt manage to get it to work) |
+| **Deployment**     | Vercel                                                     |
+| **Validation**     | Zod                                                        |
 
 ## Getting Started
 
@@ -140,7 +140,7 @@ This proof-of-concept was built to:
 
 ### 🤖 AI Agent Integration
 
-The platform provides several integration points for AI agents:
+The platform provides several integration points:
 
 #### MCP Tools
 
@@ -194,33 +194,20 @@ src/
 ## Key Files & Concepts
 
 - **`src/lib/openai-product-feed.ts`**: Transforms products into OpenAI-compliant schema
-- **`src/app/mcp/route.ts`**: MCP server exposing commerce tools to AI
+- **`src/app/mcp/route.ts`**: MCP server i tried to sett up for learning about MCP and if its viable for Agentic commerce
 - **`src/app/api/openai/products/route.ts`**: AI product discovery endpoint
-- **`public/widgets/show-product.html`**: Product display widgets for chat
 
 ## Future Enhancements
 
-- [ ] Voice commerce with speech synthesis
-- [ ] Personalized AI shopping assistants
-- [ ] Multi-agent commerce scenarios
-- [ ] Advanced product recommendation engines
+- [ ] Further research when the tech advances
+- [ ] A cool poc like https://www.agenticcommerce.dev/
 - [ ] Cross-platform AI integrations
 
 ## Contributing
 
-This POC welcomes contributions in AI commerce research:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
+Its just a POC to test :3
 
 ## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
 
 **Built with ❤️ for the future of conversational commerce**
 
